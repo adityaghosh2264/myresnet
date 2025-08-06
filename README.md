@@ -1,5 +1,5 @@
 # myresnet
-This is my implementation of ResNet from scratch in PyTorch to analyse on the CIFAR-10 dataset. 
+This is my implementation of ResNet from scratch in PyTorch and tested on the CIFAR-10 dataset. 
 
 ## ResNet-20
 The following graph is without data augmentation and we can clearly see that the resnet overfits and the error stalls.
