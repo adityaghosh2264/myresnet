@@ -1,21 +1,5 @@
-import torch, torchvision, torchvision.transforms as transforms
+import torch
 import torch.nn as nn
-import logging, time
-transform = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.491, 0.482, 0.4465],
-                         std = [0.202, 0.1994, 0.2010])
-])
-
-trainset = torchvision.datasets.CIFAR10(root = './data', train = True, transform = transform, download = True)
-testset = torchvision.datasets.CIFAR10(root = './data', train = False, transform = transform, download = True)
-
-trainloader = torch.utils.data.DataLoader(
-    trainset, batch_size = 128, shuffle = True, num_workers = 2
-)
-testloader = torch.utils.data.DataLoader(
-    testset, batch_size = 128, shuffle = True, num_workers = 2
-)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -36,7 +20,7 @@ class ResidualBlock(nn.Module):
     self.relu = nn.ReLU()
 
   def forward(self, x):
-    residual = x;
+    residual = x
     out = self.conv1(x)
     out = self.conv2(out)
     if self.downsample:
@@ -46,16 +30,23 @@ class ResidualBlock(nn.Module):
     return out
 
 class ResNet(nn.Module):
-  def __init__(self, block, layers, num_classes = 10):
+  def __init__(self, block, n, num_classes = 10):
     super().__init__()
-    self.conv1 = nn.Sequential(
-        nn.Conv2d(3, 16, kernel_size = 3, stride = 1, padding = 1, bias = False),
-        nn.BatchNorm2d(16)
+    layers = [2*n]*3
+    start = 16
+    conv1 = nn.Sequential(
+        nn.Conv2d(3, start, kernel_size = 3, stride = 1, padding = 1, bias = False),
+        nn.BatchNorm2d(start)
     )
-    self.layer_group1 = self.make_layer_group(block, 16, layers[0], stride = 1)
-    self.layer_group2 = self.make_layer_group(block, 16, layers[1], stride = 2)
-    self.layer_group3 = self.make_layer_group(block, 32, layers[2], stride = 2)
-    self.fc = nn.Linear(64, num_classes)
+    num_layers = len(layers)
+    self.layer_flow = [conv1]
+    self.layer_flow.append(self.make_layer_group(block, start, layers[0], stride = 1))
+    for i in range(1, num_layers):
+        self.layer_flow.append(self.make_layer_group(block, start, layers[i], stride = 2))
+        start *= 2
+    self.fc = nn.Linear(start, num_classes)
+
+    self.layer_flow = nn.Sequential(*self.layer_flow)
 
   @staticmethod
   def global_avg_pool(x):
@@ -64,9 +55,8 @@ class ResNet(nn.Module):
     pooled = pooled.view(pooled.shape[0], -1)
 
     return pooled
-
-  def make_layer_group(self, block, in_channels, layer_group_size, stride):
-    downsample = None
+  @staticmethod
+  def make_layer_group(block, in_channels, layer_group_size, stride):
     layers = []
     if stride != 1:
       downsample = nn.Sequential(
@@ -83,10 +73,7 @@ class ResNet(nn.Module):
     return nn.Sequential(*layers)
 
   def forward(self, x):
-    out = self.conv1(x)
-    out = self.layer_group1(out)
-    out = self.layer_group2(out)
-    out = self.layer_group3(out)
+    out = self.layer_flow(x)
     out = self.global_avg_pool(out)
     out = self.fc(out)
 
