@@ -13,3 +13,8 @@ The following plot has been done with data augmentation as mentoned in the [pape
 ## ResNet-32
 Below is the graph for ResNet-32 with data augmentation (The counterpart with no data augmentation was not trained because  similar results as that with less number of layers was expected)
 ![image alt](https://github.com/adityaghosh2264/myresnet/blob/bb89165df1d345eefd696346fede40051cbd13c5/data/resnet32_error_curve.png)
+
+
+## Accuracy testing
+The trained models were saved as checkpoints and then their accuracy was tested on the CIFAR-10 testset. 
+![image alt](https://github.com/adityaghosh2264/myresnet/blob/e31453e691ebbbcd808e1ca411cab00beabf4d9e/data/tested_accuracy.jpeg)
